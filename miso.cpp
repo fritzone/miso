@@ -8,39 +8,41 @@
 #include <iostream>
 
 template <class... Args>
-class signal
+class signal final
 {
 public:
     signal() = default;
-    signal(Args... args) = delete;
+	signal(Args... args) = delete;
+	~signal() = default;
 
-    void emit(Args... args)
-    {
-        for (auto sh : sholders)
-        {
+	signal<Args...>& operator()(Args... args)
+	{
+		emit_signal(std::forward<Args...>(args...));
+		return *this;
+	}
+
+
+private:
+
+    void emit_signal(Args... args) 
+	{
+        for (auto sh : sholders) {
             sh->run_slots(args...);
         }
     }
+
+
 
     struct slot_holder_base
     {
         virtual void run_slots(Args...) = 0;
     };
-
-    template <class R, class... FArgs>
-    struct multislot
-    {
-        typedef std::function<R(FArgs...)> slot_type;
-    };
-
-
+	
     template<class T>
     struct slot_holder : public slot_holder_base
     {
-
-        using ret_type = typename std::result_of<T(Args...)>::type;
-        using ms_type = typename multislot<ret_type, Args...>::slot_type;
-        std::vector<ms_type> slots;
+		using slot_vector_type = std::vector<std::function<typename std::result_of<T(Args...)>::type(Args...)>>;
+        slot_vector_type slots;
 
         virtual void run_slots(Args... args) override
         {
@@ -54,16 +56,9 @@ public:
     template<class T>
     void connect(T&& f)
     {
-        using ret_type = typename std::result_of<T(Args...)>::type;
-        using ms_type = typename multislot<ret_type, Args...>::slot_type;
-        static std::vector<ms_type> slots;
-
         static slot_holder<T> sh;
-
-        sh.slots.push_back(std::forward<T>(f));
-
-        auto c = std::find(sholders.begin(), sholders.end(), static_cast<slot_holder_base*>(&sh));
-        if (c == sholders.end())
+        sh.slots.emplace_back(std::forward<T>(f));
+        if (std::find(sholders.begin(), sholders.end(), static_cast<slot_holder_base*>(&sh)) == sholders.end())
         {
             sholders.push_back(&sh);
         }
@@ -115,7 +110,13 @@ public:
         s.slot_container.push_back(std::forward<T>(f));
     }
 
-    void emit()
+	signal<void>& operator()()
+	{
+		emit_signal();
+		return *this;
+	}
+
+    void emit_signal()
     {
         for (auto& sh : shs)
         {
@@ -126,8 +127,17 @@ public:
 private:
 
     std::vector<slots_holder*> shs;
-
 };
+
+/* Just a tiny syntax helper so that we can write emit my_signal(x,y,z); */
+class emitter {};
+template<class... Args>
+emitter& operator << (emitter& e, const signal<Args...>& s)
+{
+	return e;
+}
+#define emit emitter() <<
+
 
 struct more_class
 {
@@ -135,12 +145,11 @@ struct more_class
 
     void run()
     {
-        ms.emit(8);
-        ms.emit(9);
+        emit ms(8);
+        emit ms(9);
     }
 
     signal<int> ms;
-
 };
 
 
@@ -187,7 +196,7 @@ public:
 
     void some_method()
     {
-        click.emit();
+        emit click();
     }
 
     signal<void> click;
@@ -209,6 +218,8 @@ int main(int argc, char const *argv[])
     mc.ms.connect(std::bind(&other_class::clicked_again, dst, std::placeholders::_1));
 
     mc.run();
+
+	emit mc.ms(6);
 
     return 0;
 }
