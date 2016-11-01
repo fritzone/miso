@@ -21,17 +21,12 @@ public:
 		return *this;
 	}
 
-
-private:
-
     void emit_signal(Args... args) 
 	{
-        for (auto sh : sholders) {
+        for (auto& sh : sholders) {
             sh->run_slots(args...);
         }
     }
-
-
 
     struct slot_holder_base
     {
@@ -41,28 +36,68 @@ private:
     template<class T>
     struct slot_holder : public slot_holder_base
     {
-		using slot_vector_type = std::vector<std::function<typename std::result_of<T(Args...)>::type(Args...)>>;
-        slot_vector_type slots;
+		using function_type = std::function<typename std::result_of<T(Args...)>::type(Args...)>;
+		struct func_and_bool
+		{
+			std::shared_ptr<function_type> ft;
+			bool active;
+			void* addr;
+		};
+
+		static std::shared_ptr<function_type> make_ptr(function_type ft)
+		{
+			return std::make_shared<function_type>(ft);
+		}
+
+		using slot_vec_type = std::vector<func_and_bool>;
+        slot_vec_type slots;
 
         virtual void run_slots(Args... args) override
         {
-            for (auto s : slots)
+            for (auto& s : slots)
             {
-                s(args...);
+				if (s.active)
+				{
+					auto x = s.ft.get();
+					(*x)(args...);
+				}
             }
         }
     };
 
     template<class T>
-    void connect(T&& f)
+    void connect(T&& f, bool active = true)
     {
         static slot_holder<T> sh;
-        sh.slots.emplace_back(std::forward<T>(f));
+		auto pft = slot_holder<T>::make_ptr(std::forward<T>(f));
+		slot_holder<T>::func_and_bool fb{ pft, active, static_cast<void*>(&f) };
+
+		using function_type = std::function<typename std::result_of<T(Args...)>::type(Args...)>;
+
+
+		for (auto& s : sh.slots)
+		{
+			if(s.addr == fb.addr)
+			{
+				if (s.active != active)
+				{
+					s.active = active;
+				}
+			}
+		}
+
+		sh.slots.emplace_back( fb );
         if (std::find(sholders.begin(), sholders.end(), static_cast<slot_holder_base*>(&sh)) == sholders.end())
         {
             sholders.push_back(&sh);
         }
     }
+
+	template<class T>
+	void disconnect(T&& f)
+	{
+		connect<T>(std::forward<T>(f), false);
+	}
 
     std::vector<slot_holder_base*> sholders;
 };
@@ -158,6 +193,12 @@ void global_int_method(int s)
     std::cout << "global int method:" << s << std::endl;
 }
 
+void other_global_int_method(int s)
+{
+	std::cout << "other global int method:" << s << std::endl;
+}
+
+
 void global_void_method()
 {
     std::cout << "global void method:" << std::endl;
@@ -203,21 +244,46 @@ public:
 
 };
 
+template<class Si, class So>
+void connect_d(Si&& sig, So&& slo)
+{
+	std::forward<Si>(sig).connect(std::forward<So>(slo));
+}
+
+
+#define connect(a,b,c) connect_d(a.b,c)
+
 int main(int argc, char const *argv[])
 {
     my_class src;
     other_class dst(4);
 
-    src.click.connect(std::bind(&other_class::clicked, dst));
-    src.click.connect(global_void_method);
+	connect(src, click, std::bind(&other_class::clicked, dst));
+	connect(src, click, global_void_method);
+
+//    src.click.connect(std::bind(&other_class::clicked, dst));
+//    src.click.connect(global_void_method);
     src.some_method();
 
     more_class mc;
-    mc.ms.connect(global_int_method);
-    mc.ms.connect([](int c) {std::cout << "lambdint:" << c << std::endl; });
-    mc.ms.connect(std::bind(&other_class::clicked_again, dst, std::placeholders::_1));
+    connect(mc, ms, global_int_method);
+	connect(mc, ms, other_global_int_method);
 
-    mc.run();
+	auto lambdi = [](int c) {std::cout << "lambdint:" << c << std::endl; };
+
+    connect(mc, ms, lambdi);
+    connect(mc, ms, std::bind(&other_class::clicked_again, dst, std::placeholders::_1));
+
+	std::cout << "\nOriginal\n" << std::endl;
+	emit mc.ms(8);
+
+	std::cout << "\nDisconnect\n" << std::endl;
+
+	mc.ms.disconnect(global_int_method);
+	mc.ms.disconnect(other_global_int_method);
+	mc.ms.disconnect(lambdi);
+
+	std::cout << "\nAfter disconnect\n" << std::endl;
 
 	emit mc.ms(6);
 
