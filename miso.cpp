@@ -70,7 +70,7 @@ public:
     {
         static slot_holder<T> sh;
 		auto pft = slot_holder<T>::make_ptr(std::forward<T>(f));
-		slot_holder<T>::func_and_bool fb{ pft, active, static_cast<void*>(&f) };
+		typename slot_holder<T>::func_and_bool fb{ pft, active, reinterpret_cast<void*>(&f) };
 
 		using function_type = std::function<typename std::result_of<T(Args...)>::type(Args...)>;
 
@@ -167,11 +167,11 @@ private:
 /* Just a tiny syntax helper so that we can write emit my_signal(x,y,z); */
 class emitter {};
 template<class... Args>
-emitter& operator << (emitter& e, const signal<Args...>& s)
+emitter&& operator << (emitter&& e, const signal<Args...>& s)
 {
-	return e;
+	return std::forward<emitter>(e);
 }
-#define emit emitter() <<
+#define emit emitter()<<
 
 
 struct more_class
