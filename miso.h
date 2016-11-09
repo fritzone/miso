@@ -7,107 +7,46 @@
 #include <vector>
 #include <algorithm>
 #include <tuple>
-
 #include <iostream>
 #include <typeinfo>
-
 #include <cstddef>
 #include <tuple>
-
-
 #include <type_traits>
 #include <utility>
+#include <stack>
 
-template<int ...> struct seq {};
-
-template<int N, int ...S> struct gens : gens<N - 1, N - 1, S...> {};
-
-template<int ...S> struct gens<0, S...> { typedef seq<S...> type; };
-
-
-template <class... Args>
-class signal final
+namespace miso
 {
-public:
-	signal() = default;
-	signal(Args... args) = delete;
-	~signal() = default;
 
-	std::tuple<Args...> call_args;
+	template<int ...> struct seq {};
+	template<int N, int ...S> struct gens : gens<N - 1, N - 1, S...> {};
+	template<int ...S> struct gens<0, S...> { typedef seq<S...> type; };
 
-	signal<Args...>& operator()(Args... args)
+	template<typename function_type>
+	struct func_and_bool
 	{
-		call_args = std::tuple<Args...>(args...);
-		// emitter<decltype(this)> dummy(this);
-		//emit_signal(std::forward<Args...>(args...));
-		return *this;
-	}
-
-	void delayed_dipatch()
-	{
-		callFunc(typename gens<sizeof...(Args)>::type());
-	}
-
-	template<int ...S>
-	void callFunc(seq<S...>)
-	{
-		emit_signal(std::get<S>(call_args) ...);
-	}
-
-	void emit_signal(Args... args)
-	{
-		for (auto& sh : sholders) {
-			sh->run_slots(args...);
-		}
-	}
-
-	struct slot_holder_base
-	{
-		virtual void run_slots(Args...) = 0;
+		std::shared_ptr<function_type> ft;
+		bool active;
+		void* addr;
 	};
 
-	template<class T>
-	struct slot_holder : public slot_holder_base
+	template<typename function_type>
+	static std::shared_ptr<function_type> make_ptr(function_type ft)
 	{
-		using function_type = std::function<typename std::result_of<T(Args...)>::type(Args...)>;
-		struct func_and_bool
-		{
-			std::shared_ptr<function_type> ft;
-			bool active;
-			void* addr;
-		};
+		return std::make_shared<function_type>(ft);
+	}
 
-		static std::shared_ptr<function_type> make_ptr(function_type ft)
-		{
-			return std::make_shared<function_type>(ft);
-		}
-
-		using slot_vec_type = std::vector<func_and_bool>;
-		slot_vec_type slots;
-
-		virtual void run_slots(Args... args) override
-		{
-			for (auto& s : slots)
-			{
-				if (s.active)
-				{
-					auto x = s.ft.get();
-					(*x)(args...);
-				}
-			}
-		}
+	struct common_slot_base
+	{
+		virtual ~common_slot_base() = default;
 	};
 
-	template<class T>
-	void connect(T&& f, bool active = true)
+	template<class T, class function_type, class SHT>
+	void connect_p(T&& f, std::vector<common_slot_base*>& sholders, bool active = true)
 	{
-		static slot_holder<T> sh;
-		auto pft = slot_holder<T>::make_ptr(std::forward<T>(f));
-		typename slot_holder<T>::func_and_bool fb{ pft, active, reinterpret_cast<void*>(&f) };
-
-		using function_type = std::function<typename std::result_of<T(Args...)>::type(Args...)>;
-
-
+		static SHT sh;
+		auto pft = make_ptr<function_type>(std::forward<T>(f));
+		func_and_bool<function_type> fb{ pft, active, reinterpret_cast<void*>(&f) };
 		for (auto& s : sh.slots)
 		{
 			if (s.addr == fb.addr)
@@ -120,155 +59,208 @@ public:
 		}
 
 		sh.slots.emplace_back(fb);
-		if (std::find(sholders.begin(), sholders.end(), static_cast<slot_holder_base*>(&sh)) == sholders.end())
+		if (std::find(sholders.begin(), sholders.end(), static_cast<common_slot_base*>(&sh)) == sholders.end())
 		{
 			sholders.push_back(&sh);
 		}
 	}
 
-	template<class T>
-	void disconnect(T&& f)
+	template <class... Args>
+	class signal final
 	{
-		connect<T>(std::forward<T>(f), false);
-	}
+	public:
+		signal() = default;
+		signal(Args... args) = delete;
+		~signal() = default;
 
-	std::vector<slot_holder_base*> sholders;
-};
+		std::tuple<Args...> call_args;
 
-template<>
-class signal<void>
-{
-	struct slots_holder
-	{
-		virtual void run() = 0;
-	};
-
-	template <class T>
-	struct slots : public slots_holder
-	{
-		std::vector<T> slot_container;
-
-		virtual void run()
+		signal<Args...>& operator()(Args... args)
 		{
-			for (auto & s : slot_container)
+			call_args = std::tuple<Args...>(args...);
+			return *this;
+		}
+
+		void delayed_dipatch()
+		{
+			callFunc(typename gens<sizeof...(Args)>::type());
+		}
+
+		template<int ...S>
+		void callFunc(seq<S...>)
+		{
+			emit_signal(std::get<S>(call_args) ...);
+		}
+
+		void emit_signal(Args... args)
+		{
+			for (auto& sh : sholders)
 			{
-				s();
+				(dynamic_cast<slot_holder_base*>(sh))->run_slots(args...);
 			}
 		}
+
+		struct slot_holder_base : public common_slot_base
+		{
+			virtual void run_slots(Args...) = 0;
+		};
+
+		template<class T>
+		struct slot_holder : public slot_holder_base
+		{
+			using function_type = std::function<typename std::result_of<T(Args...)>::type(Args...)>;
+			using slot_vec_type = std::vector<func_and_bool<function_type>>;
+			slot_vec_type slots;
+
+			virtual void run_slots(Args... args) override
+			{
+				for (auto& s : slots)
+				{
+					if (s.active)
+					{
+						auto x = s.ft.get();
+						(*x)(args...);
+					}
+				}
+			}
+		};
+
+		template<class T>
+		void connect(T&& f, bool active = true)
+		{
+			connect_p<T, slot_holder<T>::function_type, slot_holder<T>>(std::forward<T>(f), sholders, active);
+		}
+
+		template<class T>
+		void disconnect(T&& f)
+		{
+			connect<T>(std::forward<T>(f), false);
+		}
+
+		std::vector<common_slot_base*> sholders;
 	};
 
-public:
-
-	void connect(void(&fun)())
+	template<>
+	class signal<void> final
 	{
-		using funtype = std::function<void()>;
-		connect<funtype>(fun);
-	}
+	public:
+		signal() = default;
+		~signal() = default;
 
-	template <class T>
-	void connect(T&& f)
-	{
-		static slots<T> s;
-		auto c = std::find(shs.begin(), shs.end(), static_cast<slots_holder*>(&s));
-		if (c == shs.end())
+		signal<void>& operator()()
 		{
-			shs.push_back(&s);
+			return *this;
 		}
 
-		s.slot_container.push_back(std::forward<T>(f));
-	}
-
-	signal<void>& operator()()
-	{
-		emit_signal();
-		return *this;
-	}
-
-	void emit_signal()
-	{
-		for (auto& sh : shs)
+		void delayed_dipatch()
 		{
-			sh->run();
+			emit_signal();
 		}
-	}
 
-	void delayed_dipatch()
+		struct slot_holder_base : public common_slot_base
+		{
+			virtual void run_slots() = 0;
+		};
+
+		void emit_signal()
+		{
+			for (auto& sh : sholders)
+			{
+				(dynamic_cast<slot_holder_base*>(sh))->run_slots();
+			}
+		}
+
+
+		template<class T>
+		struct slot_holder : public slot_holder_base
+		{
+			using function_type = std::function<void(void)>;
+			using slot_vec_type = std::vector<func_and_bool<function_type>>;
+			slot_vec_type slots;
+
+			virtual void run_slots() override
+			{
+				for (auto& s : slots)
+				{
+					if (s.active)
+					{
+						auto x = s.ft.get();
+						(*x)();
+					}
+				}
+			}
+		};
+
+		template<class T>
+		void connect(T&& f, bool active = true)
+		{
+			connect_p<T, slot_holder<T>::function_type, slot_holder<T>>(std::forward<T>(f), sholders, active);
+		}
+
+		template<class T>
+		void disconnect(T&& f)
+		{
+			connect<T>(std::forward<T>(f), false);
+		}
+
+		std::vector<common_slot_base*> sholders;
+	};
+
+	template<class T>
+	struct emitter final
 	{
-		emit_signal();
-	}
+		emitter(const T& emtr)
+		{
+			senderObjs.push(reinterpret_cast<const T*>(&emtr));
+			minstance = this;
+		}
 
-private:
+		~emitter()
+		{
+			senderObjs.pop();
+			minstance = nullptr;
+		}
 
-	std::vector<slots_holder*> shs;
-};
+		static T* sender()
+		{
+			return const_cast<T*>(senderObjs.top());
+		}
 
-/* Just a tiny syntax helper so that we can write emit my_signal(x,y,z); */
-template<class T>
-struct emitter 
-{
-public:
+		static emitter<T>* instance()
+		{
+			return minstance;
+		}
 
-	emitter(const T& emtr)
+	private:
+
+		static std::stack<const T*> senderObjs;
+		static emitter<T>* minstance;
+	};
+	template<class T> std::stack<const T*> emitter<T>::senderObjs;
+	template<class T> emitter<T>* emitter<T>::minstance = nullptr;
+
+	template<class T>
+	T* sender()
 	{
-		senderObj = reinterpret_cast<const T*>(&emtr);
-		minstance = this;
-
-		std::cout << "Emitter Constructor for " << typeid(emtr).name() << " (minstnace)this=" << (void*)(this) << " sedner=" << (void*)senderObj << std::endl;
-
+		auto emns = emitter<T>::instance();
+		return emns->sender();
 	}
 
-	~emitter()
+	template<class T, class... Args>
+	emitter<T>&& operator << (emitter<T>&& e, signal<Args...>& s)
 	{
-		std::cout << "Emitter Destructor for " << typeid(senderObj).name()  << " (minstnace)this=" << (void*)(this) << " sedner=" << (void*)senderObj << std::endl;
-		senderObj = nullptr;
-		minstance = nullptr;
+		s.delayed_dipatch();
+		return std::forward<emitter<T>>(e);
 	}
 
-	static T* sender()
+	template<class Si, class So>
+	void connect_p(Si&& sig, So&& slo)
 	{
-		return const_cast<T*>(senderObj);
+		std::forward<Si>(sig).connect(std::forward<So>(slo));
 	}
-
-	static emitter<T>* instance()
-	{
-		std::cout << "Emitter instance for " << typeid(minstance).name() << std::endl;
-
-		return minstance;
-	}
-
-private:
-
-	static const T* senderObj;
-	static emitter<T>* minstance;
-};
-template<class T> const T* emitter<T>::senderObj = nullptr;
-template<class T> emitter<T>* emitter<T>::minstance = nullptr;
-
-template<class T>
-T* sender()
-{
-	auto emns = emitter<T>::instance();
-	return emns->sender();
 }
 
-
-
-template<class T, class... Args>
-emitter<T>&& operator << (emitter<T>&& e, signal<Args...>& s)
-{
-	s.delayed_dipatch();
-	return std::forward<emitter<T>>(e);
-}
-#define emit emitter<std::remove_pointer<decltype(this)>::type>(*this)<<
-
-
-template<class Si, class So>
-void connect_d(Si&& sig, So&& slo)
-{
-	std::forward<Si>(sig).connect(std::forward<So>(slo));
-}
-
-#define connect(a,b,c) connect_d(a.b,c)
-
+#define connect(a,b,c) miso::connect_p(a.b,c)
+#define emit miso::emitter<std::remove_pointer<decltype(this)>::type>(*this)<<
 
 #endif
