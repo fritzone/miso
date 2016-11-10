@@ -47,7 +47,7 @@ namespace miso
 		static SHT sh;
 		auto pft = make_ptr<function_type>(std::forward<T>(f));
 		func_and_bool<function_type> fb{ pft, active, reinterpret_cast<void*>(&f) };
-		std::for_each(sh.slots.begin(), sh.slots.end(), [&](auto& s) {if (s.addr == fb.addr) s.active = active; });
+		std::for_each(sh.slots.begin(), sh.slots.end(), [&](func_and_bool<function_type>& s) {if (s.addr == fb.addr) s.active = active; });
 		sh.slots.emplace_back(fb);
 		if (std::find(sholders.begin(), sholders.end(), static_cast<common_slot_base*>(&sh)) == sholders.end())
 		{
@@ -101,14 +101,17 @@ namespace miso
 
 			virtual void run_slots(Args... args) override
 			{
-				std::for_each(slots.begin(), slots.end(), [&](auto& s) {if (s.active) (*(s.ft.get()))(args...); });
+				std::for_each(slots.begin(), slots.end(), [&](func_and_bool<function_type>& s) 
+					{if (s.active) (*(s.ft.get()))(args...); }
+				);
 			}
 		};
 
 		template<class T>
 		void connect(T&& f, bool active = true)
 		{
-			connect_p<T, typename slot_holder<T>::function_type, slot_holder<T>>(std::forward<T>(f), sholders, active);
+			connect_p<T, typename slot_holder<T>::function_type, 
+			          slot_holder<T>> (std::forward<T>(f), sholders, active);
 		}
 
 		template<class T>
