@@ -108,7 +108,7 @@ namespace miso
 		template<class T>
 		void connect(T&& f, bool active = true)
 		{
-			connect_p<T, slot_holder<T>::function_type, slot_holder<T>>(std::forward<T>(f), sholders, active);
+			connect_p<T, typename slot_holder<T>::function_type, slot_holder<T>>(std::forward<T>(f), sholders, active);
 		}
 
 		template<class T>
@@ -177,7 +177,7 @@ namespace miso
 		template<class T>
 		void connect(T&& f, bool active = true)
 		{
-			connect_p<T, slot_holder<T>::function_type, slot_holder<T>>(std::forward<T>(f), sholders, active);
+			connect_p<T, typename slot_holder<T>::function_type, slot_holder<T>>(std::forward<T>(f), sholders, active);
 		}
 
 		template<class T>
