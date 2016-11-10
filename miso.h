@@ -47,17 +47,7 @@ namespace miso
 		static SHT sh;
 		auto pft = make_ptr<function_type>(std::forward<T>(f));
 		func_and_bool<function_type> fb{ pft, active, reinterpret_cast<void*>(&f) };
-		for (auto& s : sh.slots)
-		{
-			if (s.addr == fb.addr)
-			{
-				if (s.active != active)
-				{
-					s.active = active;
-				}
-			}
-		}
-
+		std::for_each(sh.slots.begin(), sh.slots.end(), [&](auto& s) {if (s.addr == fb.addr) s.active = active; });
 		sh.slots.emplace_back(fb);
 		if (std::find(sholders.begin(), sholders.end(), static_cast<common_slot_base*>(&sh)) == sholders.end())
 		{
@@ -72,9 +62,6 @@ namespace miso
 		signal() = default;
 		signal(Args... args) = delete;
 		~signal() = default;
-
-		std::tuple<Args...> call_args;
-
 		signal<Args...>& operator()(Args... args)
 		{
 			call_args = std::tuple<Args...>(args...);
@@ -114,14 +101,7 @@ namespace miso
 
 			virtual void run_slots(Args... args) override
 			{
-				for (auto& s : slots)
-				{
-					if (s.active)
-					{
-						auto x = s.ft.get();
-						(*x)(args...);
-					}
-				}
+				std::for_each(slots.begin(), slots.end(), [&](auto& s) {if (s.active) (*(s.ft.get()))(args...); });
 			}
 		};
 
@@ -137,7 +117,10 @@ namespace miso
 			connect<T>(std::forward<T>(f), false);
 		}
 
+	private:
 		std::vector<common_slot_base*> sholders;
+		std::tuple<Args...> call_args;
+
 	};
 
 	template<>
