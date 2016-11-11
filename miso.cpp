@@ -79,23 +79,40 @@ void global_void_method()
 	std::cout << "is:" << x << " " << x->mf << std::endl ;
 }
 
+struct functor
+{
+	void operator()()
+	{
+		std::cout << "functor class" << std::endl;
+	}
+
+	void operator()(int aa)
+	{
+		std::cout << "functor class's int slot:" << aa << std::endl;
+	}
+};
+
 
 int main(int argc, char const *argv[])
 {
     my_class src(56);
 	std::cout << "mc_addre" << &src << std::endl;
     other_class dst(4);
+	functor f;
 
 	auto lambdv = []() {std::cout << "lambvoid" << std::endl; };
+	//connect(src, click, nullptr);
 	connect(src, click, lambdv);
 	connect(src, click, std::bind(&other_class::clicked, dst));
 	connect(src, click, global_void_method);
+	connect(src, click, f);
 
     src.some_method();
 
     more_class mc;
     connect(mc, ms, global_int_method);
 	connect(mc, ms, other_global_int_method);
+	connect(mc, ms, f);
 
 	auto lambdi = [](int c) {std::cout << "lambdint:" << c << std::endl; };
     connect(mc, ms, lambdi);

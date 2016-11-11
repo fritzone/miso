@@ -17,10 +17,9 @@
 
 namespace miso
 {
-
-	template<int ...> struct seq {};
-	template<int N, int ...S> struct gens : gens<N - 1, N - 1, S...> {};
-	template<int ...S> struct gens<0, S...> { typedef seq<S...> type; };
+	template<int ...> struct sequence {};
+	template<int N, int ...S> struct sequence_generator : sequence_generator<N - 1, N - 1, S...> {};
+	template<int ...S> struct sequence_generator<0, S...> { typedef sequence<S...> type; };
 
 	template<typename function_type>
 	struct func_and_bool
@@ -41,12 +40,16 @@ namespace miso
 		virtual ~common_slot_base() = default;
 	};
 
+	template<typename T, typename U>
+	constexpr bool types_equal() { return std::is_same<T, U>::value; }
+
 	template<class T, class function_type, class SHT>
-	void connect_p(T&& f, std::vector<common_slot_base*>& sholders, bool active = true)
+	void connect_i(T&& f, std::vector<common_slot_base*>& sholders, bool active = true)
 	{
 		static SHT sh;
 		auto pft = make_ptr<function_type>(std::forward<T>(f));
 		func_and_bool<function_type> fb{ pft, active, reinterpret_cast<void*>(&f) };
+
 		std::for_each(sh.slots.begin(), sh.slots.end(), [&](func_and_bool<function_type>& s) {if (s.addr == fb.addr) s.active = active; });
 		sh.slots.emplace_back(fb);
 		if (std::find(sholders.begin(), sholders.end(), static_cast<common_slot_base*>(&sh)) == sholders.end())
@@ -70,11 +73,11 @@ namespace miso
 
 		void delayed_dipatch()
 		{
-			callFunc(typename gens<sizeof...(Args)>::type());
+			callFunc(typename sequence_generator<sizeof...(Args)>::type());
 		}
 
 		template<int ...S>
-		void callFunc(seq<S...>)
+		void callFunc(sequence<S...>)
 		{
 			emit_signal(std::get<S>(call_args) ...);
 		}
@@ -102,7 +105,9 @@ namespace miso
 			virtual void run_slots(Args... args) override
 			{
 				std::for_each(slots.begin(), slots.end(), [&](func_and_bool<function_type>& s) 
-					{if (s.active) (*(s.ft.get()))(args...); }
+					{
+						if (s.active) (*(s.ft.get()))(args...); 
+					}
 				);
 			}
 		};
@@ -110,7 +115,7 @@ namespace miso
 		template<class T>
 		void connect(T&& f, bool active = true)
 		{
-			connect_p<T, typename slot_holder<T>::function_type, 
+			connect_i<T, typename slot_holder<T>::function_type, 
 			          slot_holder<T>> (std::forward<T>(f), sholders, active);
 		}
 
@@ -148,15 +153,6 @@ namespace miso
 			virtual void run_slots() = 0;
 		};
 
-		void emit_signal()
-		{
-			for (auto& sh : sholders)
-			{
-				(dynamic_cast<slot_holder_base*>(sh))->run_slots();
-			}
-		}
-
-
 		template<class T>
 		struct slot_holder : public slot_holder_base
 		{
@@ -166,21 +162,26 @@ namespace miso
 
 			virtual void run_slots() override
 			{
-				for (auto& s : slots)
-				{
-					if (s.active)
-					{
-						auto x = s.ft.get();
-						(*x)();
-					}
-				}
+				std::for_each(slots.begin(), slots.end(), [&](func_and_bool<function_type>& s) 
+					{ 
+						if (s.active)
+						{
+							(*(s.ft.get()))();
+						}
+					} 
+				);
 			}
 		};
+		
+		void emit_signal()
+		{
+			std::for_each(sholders.begin(), sholders.end(), [](common_slot_base* sh) {(dynamic_cast<slot_holder_base*>(sh))->run_slots(); });
+		}
 
 		template<class T>
 		void connect(T&& f, bool active = true)
 		{
-			connect_p<T, typename slot_holder<T>::function_type, slot_holder<T>>(std::forward<T>(f), sholders, active);
+			connect_i<T, typename slot_holder<T>::function_type, slot_holder<T>>(std::forward<T>(f), sholders, active);
 		}
 
 		template<class T>
@@ -228,8 +229,7 @@ namespace miso
 	template<class T>
 	T* sender()
 	{
-		auto emns = emitter<T>::instance();
-		return emns->sender();
+		return emitter<T>::instance()->sender();
 	}
 
 	template<class T, class... Args>
@@ -242,6 +242,7 @@ namespace miso
 	template<class Si, class So>
 	void connect_p(Si&& sig, So&& slo)
 	{
+		static_assert(! std::is_same<So, std::nullptr_t>::value , "cannot use nullptr as slot");
 		std::forward<Si>(sig).connect(std::forward<So>(slo));
 	}
 }
