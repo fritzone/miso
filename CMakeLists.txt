@@ -9,3 +9,6 @@ set(${project}_sources
 )
 
 add_executable( ${project} ${${project}_sources}) 
+
+set_property(TARGET ${project} PROPERTY CXX_STANDARD 11)
+
