@@ -65,13 +65,14 @@ namespace miso
 		signal() = default;
 		signal(Args... args) = delete;
 		~signal() = default;
+		
 		signal<Args...>& operator()(Args... args)
 		{
 			call_args = std::tuple<Args...>(args...);
 			return *this;
 		}
 
-		void delayed_dipatch()
+		void delayed_dispatch()
 		{
 			callFunc(typename sequence_generator<sizeof...(Args)>::type());
 		}
@@ -143,7 +144,7 @@ namespace miso
 			return *this;
 		}
 
-		void delayed_dipatch()
+		void delayed_dispatch()
 		{
 			emit_signal();
 		}
@@ -162,7 +163,8 @@ namespace miso
 
 			virtual void run_slots() override
 			{
-				std::for_each(slots.begin(), slots.end(), [&](func_and_bool<function_type>& s) 
+				std::for_each(slots.begin(), slots.end(), 
+					[&](func_and_bool<function_type>& s) 
 					{ 
 						if (s.active)
 						{
@@ -175,7 +177,12 @@ namespace miso
 		
 		void emit_signal()
 		{
-			std::for_each(sholders.begin(), sholders.end(), [](common_slot_base* sh) {(dynamic_cast<slot_holder_base*>(sh))->run_slots(); });
+			std::for_each(sholders.begin(), sholders.end(), 
+				[](common_slot_base* sh) 
+				{
+					(dynamic_cast<slot_holder_base*>(sh))->run_slots(); 
+				}
+			);
 		}
 
 		template<class T>
@@ -235,7 +242,7 @@ namespace miso
 	template<class T, class... Args>
 	emitter<T>&& operator << (emitter<T>&& e, signal<Args...>& s)
 	{
-		s.delayed_dipatch();
+		s.delayed_dispatch();
 		return std::forward<emitter<T>>(e);
 	}
 
