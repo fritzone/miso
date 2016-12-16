@@ -40,9 +40,6 @@ namespace miso
 		virtual ~common_slot_base() = default;
 	};
 
-	template<typename T, typename U>
-	constexpr bool types_equal() { return std::is_same<T, U>::value; }
-
 	template<class T, class function_type, class SHT>
 	void connect_i(T&& f, std::vector<common_slot_base*>& sholders, bool active = true)
 	{
