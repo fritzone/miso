@@ -1,6 +1,12 @@
 # miso - Micro Signal/Slot implementation
 
-So you may ask, why another signal/slot implementation? Since we already have the grandfather of all, the Qt signal/slot implementation which as presented in [Qt4SigSlot] is a very powerful mechanism, invented just for this purpose. Or we have the [BoostSigSlot] which is another excellent implementation of the same mechanism. Or we have other less known signal/slot implementations, such as [SigSlot] or 
+So you may ask, why another signal/slot implementation? Since we already have the grandfather of all, the Qt signal/slot implementation which, as presented in [Qt4SigSlot] is a very powerful mechanism, invented just for this purpose. 
+
+Or we have the boost signal libraries [BoostSigSlot] which is another excellent implementation of the same mechanism for the users of the boost library.
+
+And we also have other less known signal/slot implementations, such as Sarah Thompsons' signal and slot library (http://sigslot.sourceforge.net) or the VDK signals and slots written in C\++ 11 [VDKSigSlot], GNOME's own libsigc++ (http://libsigc.sourceforge.net/) the nano signal slot (https://github.com/NoAvailableAlias/nano-signal-slot). All these excellent pieces of software were written specifically for this purpose, and they all serve the needs of software developers wanting to use the Observer pattern without too much hassle. So with a good reason, you may ask why...
+
+But please bear with me ... the implementation of this mechanism seemed to be such an interresting and highly challenging research project that I could not resist it. I wanted to use the elegance of the constructs introduced with C++11 in order to avoid as much as possible of the syntactical annoyances I have found in the various signal/slot projects, and I also wanted to keep it short and concise.
 
 # Emitting a signal
 
@@ -19,9 +25,8 @@ The [Stackoverflow1] shows how to unpack a tuple holding various values of vario
 [Stackoverflow1] http://stackoverflow.com/questions/7858817/unpacking-a-tuple-to-call-a-matching-function-pointer
 
 [Qt4SigSlot] C++ GUI Programming with Qt 4 by Jasmin Blanchette & Mark Summerfield
- 
-[Qt5SigSlot] Application Development with Qt Creator, Ray Rischpater
 
-[BoostSigSlot]
+[BoostSigSlot] http://www.boost.org/doc/libs/1_61_0/doc/html/signals.html
 
-[SigSlot] http://sigslot.sourceforge.net/sigslot.pdf by Sarah Thompson
+[VDKSigSlot] http://vdksoft.github.io/signals/index.html
+

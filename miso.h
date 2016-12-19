@@ -90,7 +90,7 @@ namespace miso
 
 		struct slot_holder_base : public common_slot_base
 		{
-			virtual void run_slots(Args...) = 0;
+			virtual void run_slots(Args... args) = 0;
 		};
 
 		template<class T>
