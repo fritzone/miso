@@ -1,12 +1,28 @@
 # miso - Micro Signal/Slot implementation
 
+**miso** shortly stays for  **mi**cro **s**ignals and sl**o**ts, and certainly as the name suggests, it is an implementation of the well known language construct introduced by Qt: The signals and slots mechanism [Wikipedia]. As the article suggests, the signal-slot construct is a short, concise and pain-free implementation of the Observer pattern, ie. it provides the possibility for objects (called observers) to be recipients of automatic notifications from objects (called subject) upon a change of state, or any other notification worth event.
+
+## Reasoning
+
 So you may ask, why another signal/slot implementation? Since we already have the grandfather of all, the Qt signal/slot implementation which, as presented in [Qt4SigSlot] is a very powerful mechanism, invented just for this purpose. 
 
 Or we have the boost signal libraries [BoostSigSlot] which is another excellent implementation of the same mechanism for the users of the boost library.
 
 And we also have other less known signal/slot implementations, such as Sarah Thompsons' signal and slot library (http://sigslot.sourceforge.net) or the VDK signals and slots written in C\++ 11 [VDKSigSlot], GNOME's own libsigc++ (http://libsigc.sourceforge.net/) the nano signal slot (https://github.com/NoAvailableAlias/nano-signal-slot). All these excellent pieces of software were written specifically for this purpose, and they all serve the needs of software developers wanting to use the Observer pattern without too much hassle. So with a good reason, you may ask why...
 
-But please bear with me ... the implementation of this mechanism seemed to be such an interresting and highly challenging research project that I could not resist it. I wanted to use the elegance of the constructs introduced with C++11 in order to avoid as much as possible of the syntactical annoyances I have found in the various signal/slot projects, and I also wanted to keep it short and concise.
+But please bear with me ... the implementation of this mechanism seemed to be such an interesting and highly challenging research project that I could not resist it. I wanted to use the elegance of the constructs introduced with C++11 in order to avoid as much as possible of the syntactical annoyances I have found in the various signal/slot projects, and I also wanted to keep it short and concise.
+
+This article will not only provide a good overview of the usage of and operations permitted by this tiny library, but also will present a few interesting C++11 techniques I have stumbled upon while implementing the library and I have considered them to have a caliber worth of mentioning here.
+
+## The library itself
+
+miso being a single header library, is very easy to use, you just have to include the header file into your project and you're good to go: `#include <miso.h>` and from this point on you have access to the `namespace miso` which contains all relevant declarations that you need to use it. 
+
+### Signals, slots, here and there
+
+The notion of a slot is sort of uniform between all signal-slot libraries: It must be something that can be called. Regardless if it's a function, a functor, a lambda or some anomalous monstrosity returned by `std::bind` and placed into a `std::function`... at the end: It must be a callable. With or without parameters. Since this is what happens when you emit a signal: a "slot" is called.
+
+However, there is no real consensus regarding the very nature of signals. Qt 
 
 # Emitting a signal
 
@@ -30,3 +46,4 @@ The [Stackoverflow1] shows how to unpack a tuple holding various values of vario
 
 [VDKSigSlot] http://vdksoft.github.io/signals/index.html
 
+[Wikipedia] https://en.wikipedia.org/wiki/Signals_and_slots
