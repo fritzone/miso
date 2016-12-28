@@ -18,11 +18,28 @@ This article will not only provide a good overview of the usage of and operation
 
 miso being a single header library, is very easy to use, you just have to include the header file into your project and you're good to go: `#include <miso.h>` and from this point on you have access to the `namespace miso` which contains all relevant declarations that you need to use it. 
 
+The library was written with portability in mind, and it is compilable for both Linux and Windows, it just needs a C++11 capable compiler. 
+
 ### Signals, slots, here and there
 
 The notion of a slot is sort of uniform between all signal-slot libraries: It must be something that can be called. Regardless if it's a function, a functor, a lambda or some anomalous monstrosity returned by `std::bind` and placed into a `std::function`... at the end: It must be a callable. With or without parameters. Since this is what happens when you emit a signal: a "slot" is called.
 
-However, there is no real consensus regarding the very nature of signals. Qt 
+However, there is no real consensus regarding the very nature of signals. Qt adopted the most familiar, clear and easy to understand syntax of all the signatures:
+ 
+ ```cpp
+ signals:
+     void signalToBeEmitted(int someValue);
+ ```
+
+Simple, and clean, just like a the definition of a member function, with a unique signature, representing the parameters this signal can pass to the slots when it is `emit`ed. And the Qt meta object compiler takes care of it, by implementing the required supporting background operations (ie: the connection from the signal to actually calling the slot function), thus removing the burden from the programmer who can concentrate on implementing the actual program.
+
+The other big player in platform independent C++ library solutions, boost, on the other end has chosen a somewhat more intimidating approach to defining a signal:
+
+```cpp
+  boost::signals2::signal<void (float, float)> sig;
+```
+
+This 
 
 # Emitting a signal
 
@@ -42,7 +59,7 @@ The [Stackoverflow1] shows how to unpack a tuple holding various values of vario
 
 [Qt4SigSlot] C++ GUI Programming with Qt 4 by Jasmin Blanchette & Mark Summerfield
 
-[BoostSigSlot] http://www.boost.org/doc/libs/1_61_0/doc/html/signals.html
+[BoostSigSlot] http://www.boost.org/doc/libs/1_61_0/doc/html/signals2.html
 
 [VDKSigSlot] http://vdksoft.github.io/signals/index.html
 
