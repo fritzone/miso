@@ -8,7 +8,7 @@ So you may ask, why another signal/slot implementation? Since we already have th
 
 Or we have the boost signal libraries [BoostSigSlot] which is another excellent implementation of the same mechanism for the users of the boost library.
 
-And we also have other less known signal/slot implementations, such as Sarah Thompsons' signal and slot library (http://sigslot.sourceforge.net) or the VDK signals and slots written in C\++ 11 [VDKSigSlot], GNOME's own libsigc++ (http://libsigc.sourceforge.net/) the nano signal slot (https://github.com/NoAvailableAlias/nano-signal-slot). All these excellent pieces of software were written specifically for this purpose, and they all serve the needs of software developers wanting to use the Observer pattern without too much hassle. So with a good reason, you may ask why...
+And we also have other less known signal/slot implementations, such as Sarah Thompsons' signal and slot library (http://sigslot.sourceforge.net) or the VDK signals and slots written in C\++ 11 [VDKSigSlot], GNOME's own libsigc++ (http://libsigc.sourceforge.net/) [libsigc++], the nano signal slot (https://github.com/NoAvailableAlias/nano-signal-slot) [nanosigslot]. All these excellent pieces of software were written specifically for this purpose, and they all serve the needs of software developers wanting to use the Observer pattern without too much hassle. So with a good reason, you may ask why...
 
 But please bear with me ... the implementation of this mechanism seemed to be such an interesting and highly challenging research project that I could not resist it. I wanted to use the elegance of the constructs introduced with C++11 in order to avoid as much as possible of the syntactical annoyances I have found in the various signal/slot projects, and I also wanted to keep it short and concise.
 
@@ -33,13 +33,13 @@ However, there is no real consensus regarding the very nature of signals. Qt ado
 
 Simple, and clean, just like a the definition of a member function, with a unique signature, representing the parameters this signal can pass to the slots when it is `emit`ed. And the Qt meta object compiler takes care of it, by implementing the required supporting background operations (ie: the connection from the signal to actually calling the slot function), thus removing the burden from the programmer who can concentrate on implementing the actual program.
 
-The other big player in platform independent C++ library solutions, boost, on the other end has chosen a somewhat more intimidating approach to defining a signal:
+The other big player in platform independent C++ library solutions, boost, on the other end has chosen a somewhat more complex approach to defining a signal:
 
 ```cpp
   boost::signals2::signal<void (float, float)> sig;
 ```
 
-This 
+This way of defining a signal feels very similar to the declaration of a function packed in a signal box, and due to the fact that it can be widely understood what it means, it was also adopted by [VDKSigSlot], [neosigslot] and [nanosigslot].
 
 # Emitting a signal
 
@@ -64,3 +64,9 @@ The [Stackoverflow1] shows how to unpack a tuple holding various values of vario
 [VDKSigSlot] http://vdksoft.github.io/signals/index.html
 
 [Wikipedia] https://en.wikipedia.org/wiki/Signals_and_slots
+
+[libsigc++] http://libsigc.sourceforge.net/
+
+[neosigslot] http://i42.co.uk/stuff/neosigslot.htm
+
+[nanosigslot] https://github.com/NoAvailableAlias/nano-signal-slot
