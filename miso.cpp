@@ -1,6 +1,8 @@
 #include "miso.h"
 #include <ctime>
 
+#include <string>
+
 using namespace miso;
 
 struct more_class
@@ -9,19 +11,24 @@ struct more_class
 
     void run(int v)
     {
-		emit ms(v);
+        emit ms(v);
+        emit os("Hurra", v);
     }
 
     signal<int> ms;
+    signal<std::string, int> os;
+    signal<float, int> float_int_sig;
 };
-
-
 
 void other_global_int_method(int s)
 {
-	std::cout << "other global int method:" << s << std::endl;
+    std::cout << "other global int method:" << s << std::endl;
 }
 
+void global_with_two_parameters(const std::string& s, int i)
+{
+    std::cout << "Two param global: s=" << s << " i=" << i << std::endl;
+}
 
 class other_class
 {
@@ -97,29 +104,31 @@ struct functor
 int main(int argc, char const *argv[])
 {
     my_class src(56);
-	std::cout << "mc_addre" << &src << std::endl;
+    std::cout << "mc_addre" << &src << std::endl;
     other_class dst(4);
-	functor f;
+    functor f;
 
-	auto lambdv = []() {std::cout << "lambvoid" << std::endl; };
-	//connect(src, click, nullptr);
-	connect(src, click, lambdv);
-	connect(src, click, std::bind(&other_class::clicked, dst));
-	connect(src, click, global_void_method);
-	connect(src, click, f);
+    auto lambdv = []() {std::cout << "lambvoid" << std::endl; };
+    //connect(src, click, nullptr);
+    connect(src, click, lambdv);
+    connect(src, click, std::bind(&other_class::clicked, dst));
+    connect(src, click, global_void_method);
+    connect(src, click, f);
 
     src.some_method();
 
     more_class mc;
     connect(mc, ms, global_int_method);
-	connect(mc, ms, other_global_int_method);
-	connect(mc, ms, f);
+    connect(mc, ms, other_global_int_method);
+    connect(mc, ms, f);
 
-	auto lambdi = [](int c) {std::cout << "lambdint:" << c << std::endl; };
+    connect(mc, os, global_with_two_parameters); 
+
+    auto lambdi = [](int c) {std::cout << "lambdint:" << c << std::endl; };
     connect(mc, ms, lambdi);
     connect(mc, ms, std::bind(&other_class::clicked_again, dst, std::placeholders::_1));
 
-	std::cout << "\nOriginal\n" << std::endl;
+    std::cout << "\nOriginal\n" << std::endl;
 	
 	mc.run(7);
 

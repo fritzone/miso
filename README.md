@@ -4,19 +4,19 @@
 
 ## Reasoning
 
-So you may ask, why another signal/slot implementation? Since we already have the grandfather of all, the Qt signal/slot implementation which, as presented in [Qt4SigSlot] is a very powerful mechanism, invented just for this purpose. 
+So you may ask, why another signal/slot implementation? Since we already have the grandfather of all, the Qt signal/slot implementation which, as presented in [Qt4SigSlot] is a very powerful mechanism, invented just for this purpose and which was enhanced with Qt5's new syntax for signals and slots [Qt5SigSlot]. 
 
 Or we have the boost signal libraries [BoostSigSlot] which is another excellent implementation of the same mechanism for the users of the boost library.
 
-And we also have other less known signal/slot implementations, such as Sarah Thompsons' signal and slot library (http://sigslot.sourceforge.net) or the VDK signals and slots written in C\++ 11 [VDKSigSlot], GNOME's own libsigc++ (http://libsigc.sourceforge.net/) [libsigc++], the nano signal slot (https://github.com/NoAvailableAlias/nano-signal-slot) [nanosigslot]. All these excellent pieces of software were written specifically for this purpose, and they all serve the needs of software developers wanting to use the Observer pattern without too much hassle. So with a good reason, you may ask why...
+And we also have other less knon signal/slot implementations, such as Sarah Thompsons' signal and slot library (http://sigslot.sourceforge.net) or the VDK signals and slots written in C\++ 11 [VDKSigSlot], GNOME's own libsigc++ (http://libsigc.sourceforge.net/) [libsigc++], the nano signal slot (https://github.com/NoAvailableAlias/nano-signal-slot) [nanosigslot]. All these excellent pieces of software were written specifically for this purpose, and they all serve the needs of software developers wanting to use the Observer pattern without too much hassle. So with a good reason, you may ask why...
 
-But please bear with me ... the implementation of this mechanism seemed to be such an interesting and highly challenging research project that I could not resist it. I wanted to use the elegance of the constructs introduced with C++11 in order to avoid as much as possible of the syntactical annoyances I have found in the various signal/slot projects, and I also wanted to keep it short and concise.
+But please bear with me ... the implementation of this mechanism seemed to be such an interesting and highly challenging research project that I could not resist it. I wanted to use the elegance of the constructs introduced with C++11 in order to avoid as much as possible of the syntactical annoyances I have found in the various signal/slot projects, which were bound to old-style C++ syntax, and I also wanted to keep it short and concise.
 
 This article will not only provide a good overview of the usage of and operations permitted by this tiny library, but also will present a few interesting C++11 techniques I have stumbled upon while implementing the library and I have considered them to have a caliber worth of mentioning here.
 
 ## The library itself
 
-miso being a single header library, is very easy to use, you just have to include the header file into your project and you're good to go: `#include <miso.h>` and from this point on you have access to the `namespace miso` which contains all relevant declarations that you need to use it. 
+**miso** being a single header library, is very easy to use, you just have to include the header file into your project and you're good to go: `#include <miso.h>` and from this point on you have access to the `namespace miso` which contains all relevant declarations that you need to use it. 
 
 The library was written with portability in mind, and it is compilable for both Linux and Windows, it just needs a C++11 capable compiler. 
 
@@ -28,18 +28,26 @@ However, there is no real consensus regarding the very nature of signals. Qt ado
  
  ```cpp
  signals:
-     void signalToBeEmitted(int someValue);
+     void signalToBeEmitted(float theFloat, int theInt);
  ```
 
 Simple, and clean, just like a the definition of a member function, with a unique signature, representing the parameters this signal can pass to the slots when it is `emit`ed. And the Qt meta object compiler takes care of it, by implementing the required supporting background operations (ie: the connection from the signal to actually calling the slot function), thus removing the burden from the programmer who can concentrate on implementing the actual program.
 
-The other big player in platform independent C++ library solutions, boost, on the other end has chosen a somewhat more complex approach to defining a signal:
+The other big player in platform independent C++ library solutions, boost, on the other end has chosen a somewhat more complex approach to defining the same signal:
 
 ```cpp
-  boost::signals2::signal<void (float, float)> sig;
+  boost::signals2::signal<void (float, int)> sig;
 ```
 
-This way of defining a signal feels very similar to the declaration of a function packed in a signal box, and due to the fact that it can be widely understood what it means, it was also adopted by [VDKSigSlot], [neosigslot] and [nanosigslot].
+This way of defining a signal feels very similar to the declaration of a function packed in a signal box, and due to the fact that it can be widely understood what it means, it was also adopted by [VDKSigSlot], [neosigslot] and [nanosigslot]. This syntax has the advantage of not requiring an extra step in the compilation phase (like moc of Qt) since this is already syntactically correct C++ which the compiler can handle without too much hassle. This declaration also has the side effect that comparing with Qt's signal declaration we have a tangible C++ variable which possibly is a class with methods and properties we can act upon.
+
+### Signals in **miso**    
+
+The signal definition of **miso** uses the following syntax in order to declare the same signal:
+
+```cpp
+signal<float, int> float_int_sig;
+```
 
 # Emitting a signal
 
@@ -59,14 +67,20 @@ The [Stackoverflow1] shows how to unpack a tuple holding various values of vario
 
 [Qt4SigSlot] C++ GUI Programming with Qt 4 by Jasmin Blanchette & Mark Summerfield
 
+[Qt5SigSlot] http://doc.qt.io/qt-5/signalsandslots.html
+
 [BoostSigSlot] http://www.boost.org/doc/libs/1_61_0/doc/html/signals2.html
 
 [VDKSigSlot] http://vdksoft.github.io/signals/index.html
 
 [Wikipedia] https://en.wikipedia.org/wiki/Signals_and_slots
 
-[libsigc++] http://libsigc.sourceforge.net/
+[libsigc++] http://libsigc.
 
-[neosigslot] http://i42.co.uk/stuff/neosigslot.htm
+connect(mc, os, sourceforge.net/
 
-[nanosigslot] https://github.com/NoAvailableAlias/nano-signal-slot
+    neosigslot] http://i42.co.uk/stuff/neosigslot.htm    
+:    
+nnvim    mi	c	
+    [nanosigs   _globa_with_two_parameters);l    
+ htt    s://github.com/NoAvailableAlias/nano-signal-slot
