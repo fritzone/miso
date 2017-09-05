@@ -1,5 +1,52 @@
 #include "miso.h"
-#include <ctime>
+#include <iostream>
+
+struct other_class
+{
+    void method() const
+    {
+        std::cout << "Other class method";
+    }
+};
+
+struct a_class
+{
+    miso::signal<const char*> m_s;
+    miso::signal<other_class> m_s2;
+
+    void say_hello()
+    {
+        emit m_s("Hello from a class");
+
+        emit m_s2(other_class());
+
+    }
+};
+
+void b_function(other_class oc)
+{
+    oc.method();
+}
+
+void a_function(const char* msg)
+{
+    std::cout << msg << std::endl;
+}
+
+int main()
+{
+    a_class a;
+    miso::connect(a.m_s, a_function);
+    miso::connect(a.m_s, [](const char* s) { std::cout << "I'm a lambda and still say: " << s << std::endl; });
+
+    miso::connect(a.m_s2, b_function);
+
+    a.say_hello();
+}
+
+
+
+/*#include <ctime>
 
 #include <string>
 
@@ -63,7 +110,7 @@ public:
         emit click();
     }
 
-    signal<void> click;
+    signal<> click;
 
 
 	int mf = 0;
@@ -109,11 +156,14 @@ int main(int argc, char const *argv[])
     functor f;
 
     auto lambdv = []() {std::cout << "lambvoid" << std::endl; };
-    //connect(src, click, nullptr);
     connect(src, click, lambdv);
     connect(src, click, std::bind(&other_class::clicked, dst));
     connect(src, click, global_void_method);
     connect(src, click, f);
+
+    src.some_method();
+
+    src.click.disconnect(lambdv);
 
     src.some_method();
 
@@ -143,3 +193,4 @@ int main(int argc, char const *argv[])
 	mc.run(8);
     return 0;
 }
+*/
