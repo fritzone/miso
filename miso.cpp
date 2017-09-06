@@ -1,6 +1,6 @@
 #include "miso.h"
 #include <iostream>
-
+/*
 struct other_class
 {
     void method() const
@@ -44,10 +44,9 @@ int main()
     a.say_hello();
 }
 
+*/
 
-
-/*#include <ctime>
-
+#include <ctime>
 #include <string>
 
 using namespace miso;
@@ -62,9 +61,9 @@ struct more_class
         emit os("Hurra", v);
     }
 
-    signal<int> ms;
-    signal<std::string, int> os;
-    signal<float, int> float_int_sig;
+    miso::signal<int> ms;
+    miso::signal<std::string, int> os;
+    miso::signal<float, int> float_int_sig;
 };
 
 void other_global_int_method(int s)
@@ -110,7 +109,7 @@ public:
         emit click();
     }
 
-    signal<> click;
+    miso::signal<> click;
 
 
 	int mf = 0;
@@ -155,11 +154,12 @@ int main(int argc, char const *argv[])
     other_class dst(4);
     functor f;
 
+
     auto lambdv = []() {std::cout << "lambvoid" << std::endl; };
-    connect(src, click, lambdv);
-    connect(src, click, std::bind(&other_class::clicked, dst));
-    connect(src, click, global_void_method);
-    connect(src, click, f);
+    miso::connect(src.click, lambdv);
+    miso::connect(src.click, std::bind(&other_class::clicked, dst));
+    miso::connect(src.click, global_void_method);
+    miso::connect(src.click, f);
 
     src.some_method();
 
@@ -168,15 +168,15 @@ int main(int argc, char const *argv[])
     src.some_method();
 
     more_class mc;
-    connect(mc, ms, global_int_method);
-    connect(mc, ms, other_global_int_method);
-    connect(mc, ms, f);
+    connect(mc.ms, global_int_method);
+    connect(mc.ms, other_global_int_method);
+    connect(mc.ms, f);
 
-    connect(mc, os, global_with_two_parameters); 
+    connect(mc.os, global_with_two_parameters);
 
     auto lambdi = [](int c) {std::cout << "lambdint:" << c << std::endl; };
-    connect(mc, ms, lambdi);
-    connect(mc, ms, std::bind(&other_class::clicked_again, dst, std::placeholders::_1));
+    connect(mc.ms, lambdi);
+    connect(mc.ms, std::bind(&other_class::clicked_again, dst, std::placeholders::_1));
 
     std::cout << "\nOriginal\n" << std::endl;
 	
@@ -193,4 +193,4 @@ int main(int argc, char const *argv[])
 	mc.run(8);
     return 0;
 }
-*/
+/**/

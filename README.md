@@ -10,7 +10,7 @@ Or we have the boost signal libraries [BoostSigSlot] which is another excellent 
 
 And we also have other less known signal/slot implementations, such as Sarah Thompsons' signal and slot library (http://sigslot.sourceforge.net) or the VDK signals and slots written in C++ 11 [VDKSigSlot], GNOME's own libsigc++ (http://libsigc.sourceforge.net/) [libsigc++], the nano signal slot (https://github.com/NoAvailableAlias/nano-signal-slot) [nanosigslot]. All these excellent pieces of software were written specifically for this purpose, and they all serve the needs of software developers wanting to use the Observer pattern without too much hassle. So with a good reason, you may ask why...
 
-But please bear with me ... the implementation of this mechanism seemed to be such an interesting and highly challenging research project that I could not resist it. I wanted to use the elegance of the constructs introduced with C++11 in order to avoid as much as possible of the syntactical annoyances I have found in the various signal/slot projects, which were bound to old-style C++ syntax, and I also wanted to keep it short and concise. Hence, this header only micro library appeared, and in the spirit of keeping it simple, it is under 200 lines, but still tries to offer the full functionality one would expect from a signal/slot library.
+But please bear with me ... the implementation of this mechanism seemed to be such an interesting and highly challenging research project that I could not resist it. I wanted to use the elegance of the constructs introduced with C++11 in order to avoid as much as possible of the syntactical annoyances I have found in the various signal/slot projects, which were bound to old-style C++ syntax, and I also wanted to keep it short and concise. Hence, this header only micro library appeared, and in the spirit of keeping it simple, it is under 150 lines, but still tries to offer the full functionality one would expect from a signal/slot library.
 
 This article will not only provide a good overview of the usage of and operations permitted by this tiny library, but also will present a few interesting C++11 techniques I have stumbled upon while implementing the library and I have considered them to have a caliber worth of mentioning here.
 
@@ -51,13 +51,13 @@ signal<float, int> float_int_sig;
 
 Achieving the simplicity of Qt's signal syntax seemed to not to be possible without using an extra step in the compilation phase (I am thinking of `moc`) and personally I have found including a function signature in the declaration of my signal not be working for me, so I went for the simplest syntax that was able to express the desired type of my signal (such as having a `float` and an `int` parameter) and with the supporting help of the variadic templates introduced in C++11 this seemed to be the ideal combination.
 
-So, from this above we see that a signal in the **miso** framework will be an object, constructed from a templated class which handles a various number of types. There is just one specific exception, the signals which carry no parameters. They must be declared as:
+So, from this above we see that a signal in the **miso** framework will be an object, constructed from a templated class which handles a various number of types. As easily deducedm the signals which carry no parameters must be declared as:
 
 ```cpp
-signal<void> void_signal;
+signal<> void_signal;
 ```
 
-The decision to have to explicitly specify the void signal as a template specialization has its advantages, both from the users' point of view, and also the library's internal design gained a bit of ruggedness by it. 
+The decision to not have to explicitly specify the void signal as a template specialization has its advantages, both from the users' point of view, and also the library's internal design gained a bit of ruggedness by it. 
 
 ## A tiny application
 
@@ -108,7 +108,7 @@ This was a short example, now it is time to break down the application into tiny
 
 There are the following interesting elements in the `miso` namespace
   
- 1. The signal class in various incarnations
+ 1. The `signal` class 
  2. The `connect` and the `sender` methods
  3. The macro definition for `emit`. Although this is not namespace dependant, it just felt right to place it there.
  
@@ -124,13 +124,7 @@ The class responsible for creating signals has the following declaration:
 template <class... Args> class signal final
 ```
 
-My intention was to keep the signal objects final, in order to have a clean interface and easy implementation, however this does not stop you from removing the final and providing good implementation for use cases for signal derived classes. As mentioned above, the void signal (ie: the one which takes no parameters) is a specialization of this class, and it also can be found inside the header:
-
-```cpp
-template<> class signal<void> final
-```
-
-
+My intention was to keep the signal objects final, in order to have a clean interface and easy implementation, however this does not stop you from removing the final and providing good implementation for use cases for signal derived classes. The default constructor and destructors are `default`
 
 # Emitting a signal
 
