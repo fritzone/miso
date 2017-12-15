@@ -28,7 +28,7 @@ However, there is no real consensus regarding the very nature of signals. Qt ado
  
  ```cpp
  signals:
-     void signalToBeEmitted(float theFloat, int theInt);
+     void signalToBeEmitted(float floatParameter, int intParameter);
  ```
 
 Simple, and clean, just like a the definition of a member function, with a unique signature, representing the parameters this signal can pass to the slots when it is `emit`ed. And the Qt meta object compiler takes care of it, by implementing the required supporting background operations (ie: the connection from the signal to actually calling the slot function), thus removing the burden from the programmer who can concentrate on implementing the actual program.
@@ -124,7 +124,87 @@ The class responsible for creating signals has the following declaration:
 template <class... Args> class signal final
 ```
 
-My intention was to keep the signal objects final, in order to have a clean interface and easy implementation, however this does not stop you from removing the final and providing good implementation for use cases for signal derived classes. The default constructor and destructors are `default`
+My intention was to keep the signal objects final, in order to have a clean interface and easy implementation, however this does not stop you from removing the final and providing good implementation for use cases for signal derived classes. A short overview of the public members is as follows: The default constructor and destructors are marked `default`, we just let the compiler do its default work for this case. 
+
+The following two methods are `connect` and `disconnect`, and as their name suggest these will connect (or disconnect) the signal to (from) a slot. Right now the following slots can be used:
+
+#### A function
+
+The function must be declared with parameters corresponsing to the parameters of the signal, and it must not be restricted to basic C++ types. Using `std::function` values also works, and so do the `static` methods of various classes.
+
+```cpp
+struct other_class {
+    void method() const {
+        std::cout << "Hello from the Other class method";
+    }
+};
+
+struct a_class {
+    miso::signal<other_class> m_s;
+
+    void say_hello() {
+        emit m_s(other_class());
+
+    }
+};
+
+void b_function(other_class oc) {
+    oc.method();
+}
+
+int main() {
+    a_class a;
+    std::function<void (other_class)> f = b_function;
+    miso::connect(a.m_s, f);
+    miso::connect(a.m_s, b_function);
+    a.say_hello();
+}
+```
+
+The example from above will call `b_function` two times which will print two times the "Hello from the Other class method" due to it being connected two times to the same signal.
+ 
+
+#### A lambda expression
+
+The lambda expression can be either coming from an `auto l = []() {...}` expression, or just simply written as a parameter to the connect. Again, correct matching of lambda parameters is required. So, an example for the above source code would be:
+
+```cpp
+miso::connect(a.m_s, [](other_class b) { b.method(); });
+```
+
+#### A functor
+
+A function object allows to invoke the instantiation of a functor class in a manner similar to functions by providing an overload to `operator ()`. So, in order to use a functor as a slot we can have the following code:     
+
+```cpp
+
+struct functor {
+    void operator()(int aa) {
+        std::cout << "functor class's int slot:" << aa << std::endl;
+    }
+};
+
+struct a_class {
+    miso::signal<int> m_s;
+
+    void say_hello() {
+        emit m_s(42);
+    }
+};
+
+int main() {
+    a_class a;
+    functor f;
+
+    miso::connect(a.m_s, f);
+
+    a.say_hello();
+}
+```
+
+As a side note, if there are more than overloads of `operator ()` it is possible to connect more than one signals to the same functor.   
+
+3. 
 
 # Emitting a signal
 
@@ -152,7 +232,7 @@ The [Stackoverflow1] shows how to unpack a tuple holding various values of vario
 
 [Wikipedia] https://en.wikipedia.org/wiki/Signals_and_slots
 
-[libsigc++] http://libsigc.
+[libsigc++] http://libsigc.sourceforge.net/
 
 connect(mc, os, sourceforge.net/
 

@@ -1,51 +1,43 @@
 #include "miso.h"
 #include <iostream>
-/*
-struct other_class
-{
-    void method() const
-    {
-        std::cout << "Other class method";
+
+struct functor {
+    void operator()() {
+        std::cout << "functor class's void slot:" << std::endl;
+    }
+
+    void operator()(int aa) {
+        std::cout << "functor class's int slot:" << aa << std::endl;
     }
 };
 
-struct a_class
-{
-    miso::signal<const char*> m_s;
-    miso::signal<other_class> m_s2;
+struct a_class {
+    miso::signal<int> m_s;
+    miso::signal<> m_s2;
 
-    void say_hello()
-    {
-        emit m_s("Hello from a class");
-
-        emit m_s2(other_class());
-
+    void say_hello() {
+        emit m_s(42);
+    }
+    void boo() {
+        emit m_s2();
     }
 };
 
-void b_function(other_class oc)
-{
-    oc.method();
-}
 
-void a_function(const char* msg)
-{
-    std::cout << msg << std::endl;
-}
-
-int main()
-{
+int main() {
     a_class a;
-    miso::connect(a.m_s, a_function);
-    miso::connect(a.m_s, [](const char* s) { std::cout << "I'm a lambda and still say: " << s << std::endl; });
+    functor f;
 
-    miso::connect(a.m_s2, b_function);
+    miso::connect(a.m_s, f);
+    miso::connect(a.m_s2, f);
 
     a.say_hello();
+    a.boo();
 }
 
-*/
+/**/
 
+/*
 #include <ctime>
 #include <string>
 

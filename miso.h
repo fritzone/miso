@@ -11,6 +11,8 @@
 
 namespace miso
 {
+    template <class... Args> class signal;
+
     namespace internal {
 
         template<int ...> struct sequence {};
@@ -68,6 +70,12 @@ namespace miso
 
         template<class T> std::stack<const T *> emitter<T>::senderObjs;
         template<class T> emitter<T> *emitter<T>::minstance = nullptr;
+
+        template<class T, class... Args>
+        emitter<T> &&operator <<(internal::emitter<T> &&e, signal<Args...> &s) {
+            s.delayed_dispatch();
+            return std::forward<internal::emitter<T>>(e);
+        }
     }
 
 	template <class... Args>
@@ -104,18 +112,16 @@ namespace miso
             emit_signal(std::get<S>(call_args) ...);
         }
 
+        void delayed_dispatch()	{
+            delayed_call(typename internal::sequence_generator<sizeof...(Args)>::type());
+        }
+
     public:
-		signal() = default;
-		~signal() = default;
+        template<class T, class... Brgs> friend
+        internal::emitter<T> && internal::operator <<(internal::emitter<T> &&e, signal<Brgs...> &s);
 
-		signal<Args...>& operator()(Args... args) {
-			call_args = std::tuple<Args...>(args...);
-			return *this;
-		}
-
-		void delayed_dispatch()	{
-			delayed_call(typename internal::sequence_generator<sizeof...(Args)>::type());
-		}
+		explicit signal() = default;
+		~signal() noexcept = default;
 
 		template<class T>
 		void connect(T&& f, bool active = true) {
@@ -127,15 +133,12 @@ namespace miso
 		void disconnect(T&& f) {
 			connect<T>(std::forward<T>(f), false);
 		}
-	};
 
-    namespace internal {
-        template<class T, class... Args>
-        emitter<T> &&operator<<(emitter<T> &&e, signal<Args...> &s) {
-            s.delayed_dispatch();
-            return std::forward<emitter<T>>(e);
+        signal<Args...>& operator()(Args... args) {
+            call_args = std::tuple<Args...>(args...);
+            return *this;
         }
-    }
+	};
 
     template<class Si, class So>
     void connect(Si &&sig, So &&slo) {
@@ -148,7 +151,7 @@ namespace miso
         return internal::emitter<T>::instance()->sender();
     }
 
-    #define emit miso::internal::emitter<std::remove_pointer<decltype(this)>::type>(*this)<<
+    #define emit miso::internal::emitter<std::remove_pointer<decltype(this)>::type>(*this) <<
 
 }
 
