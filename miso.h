@@ -34,9 +34,10 @@ namespace miso
         void connect_i(T &&f, std::vector<common_slot_base *> &sholders, bool active = true) {
             static SHT sh;
             func_and_bool<FT> fb{std::make_shared<FT>(std::forward<T>(f)), active, reinterpret_cast<void *>(&f)};
+            bool already_in = false;
             std::for_each(sh.slots.begin(), sh.slots.end(),
-                          [&](func_and_bool<FT> &s) { if (s.addr == fb.addr) s.active = active; });
-            sh.slots.emplace_back(fb);
+                          [&](func_and_bool<FT> &s) { if (s.addr == fb.addr){s.active = active; already_in = true; } });
+            if (!already_in) sh.slots.emplace_back(fb);
             if (std::find(sholders.begin(), sholders.end(), static_cast<common_slot_base *>(&sh)) == sholders.end()) {
                 sholders.push_back(&sh);
             }
@@ -45,17 +46,17 @@ namespace miso
         template<class T>
         struct emitter final {
             explicit emitter(const T &emtr) {
-                senderObjs.push(&emtr);
+                sender_objs.push(&emtr);
                 minstance = this;
             }
 
             ~emitter() {
-                senderObjs.pop();
+                sender_objs.pop();
                 minstance = nullptr;
             }
 
             static T *sender() {
-                return const_cast<T *>(senderObjs.top());
+                return const_cast<T *>(sender_objs.top());
             }
 
             static emitter<T> *instance() {
@@ -64,11 +65,11 @@ namespace miso
 
         private:
 
-            static std::stack<const T *> senderObjs;
+            static std::stack<const T *> sender_objs;
             static emitter<T> *minstance;
         };
 
-        template<class T> std::stack<const T *> emitter<T>::senderObjs;
+        template<class T> std::stack<const T *> emitter<T>::sender_objs;
         template<class T> emitter<T> *emitter<T>::minstance = nullptr;
 
         template<class T, class... Args>
@@ -148,7 +149,10 @@ namespace miso
 
     template<class T>
     T *sender() {
-        return internal::emitter<T>::instance()->sender();
+        if(internal::emitter<T>::instance()) {
+            return internal::emitter<T>::instance()->sender();
+        }
+        throw std::runtime_error("not in an emit call");
     }
 
     #define emit miso::internal::emitter<std::remove_pointer<decltype(this)>::type>(*this) <<

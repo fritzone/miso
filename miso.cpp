@@ -1,41 +1,31 @@
 #include "miso.h"
 #include <iostream>
 
-struct functor {
-    void operator()() {
-        std::cout << "functor class's void slot:" << std::endl;
-    }
-
-    void operator()(int aa) {
-        std::cout << "functor class's int slot:" << aa << std::endl;
-    }
-};
-
 struct a_class {
     miso::signal<int> m_s;
-    miso::signal<> m_s2;
 
     void say_hello() {
         emit m_s(42);
     }
-    void boo() {
-        emit m_s2();
-    }
+    int x = 45;
 };
-
-
+struct functor {
+    void operator()(int aa) {
+        std::cout << "functor class's int slot:" << aa << std::endl;
+        auto ap = miso::sender<functor>();
+        std::cout << "x in emitter class:" << ap->x << std::endl;    
+    }
+    int x = 6;
+};
 int main() {
     a_class a;
     functor f;
-
     miso::connect(a.m_s, f);
-    miso::connect(a.m_s2, f);
-
     a.say_hello();
-    a.boo();
 }
 
 /**/
+
 
 /*
 #include <ctime>
