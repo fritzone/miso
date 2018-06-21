@@ -8,7 +8,7 @@ So you may ask, why another signal/slot implementation? Since we already have th
 
 Or we have the boost signal libraries [BoostSigSlot] which is another excellent implementation of the same mechanism for the users of the boost library.
 
-And we also have other less known signal/slot implementations, such as Sarah Thompsons' signal and slot library (http://sigslot.sourceforge.net) or the VDK signals and slots written in C++ 11 [VDKSigSlot], GNOME's own libsigc++ (http://libsigc.sourceforge.net/) [libsigc++], the nano signal slot (https://github.com/NoAvailableAlias/nano-signal-slot) [nanosigslot] or several other ones which I was not able to discover even with Google's powerful search algorithm. 
+And we also have other less known signal/slot implementations, such as Sarah Thompsons' signal and slot library (http://sigslot.sourceforge.net) or the VDK signals and slots written in C++ 11 [VDKSigSlot], GNOME's own libsigc++ (http://libsigc.sourceforge.net/) [libsigc++], the nano signal slot (https://github.com/NoAvailableAlias/nano-signal-slot) [nanosigslot], Patrick Hogans' Signals (https://github.com/pbhogan/Signals) [PBHogan] or several fresher ones from github (nod - https://github.com/fr00b0/nod, sigcxx - https://github.com/zhanggyb/sigcxx, sigslot - https://github.com/supergrover/sigslot, cpp-signal - https://github.com/Montellese/cpp-signal) or the more hidden ones, which I was not able to discover even with Google's powerful search algorithm. 
 
 All these excellent pieces of software were written specifically for this purpose, and they all serve the needs of software developers wanting to use the signals and slots mechanism without too much hassle. 
 
@@ -45,7 +45,7 @@ The other big player in platform independent C++ library solutions, boost, on th
   boost::signals2::signal<void (float, int)> sig;
 ```
 
-This way of defining a signal feels very similar to the declaration of a function packed in a signal box, and due to the fact that it can be widely understood what it means, it was also adopted by [VDKSigSlot], [neosigslot] and [nanosigslot]. This syntax has the advantage of not requiring an extra step in the compilation phase (like `moc` of Qt) since this is already syntactically correct C++ which the compiler can handle without too much hassle. This declaration also has the side effect that comparing with Qt's signal declaration we have a tangible C++ variable which possibly is a class with methods and properties we can act upon.
+This way of defining a signal feels very similar to the declaration of a function packed in a signal box, and due to the fact that it can be widely understood what it means, it was also adopted by [VDKSigSlot], [neosigslot] and [nanosigslot] too, but also nod, sigcxx, sigslot (the one from github), cpp-signal. This syntax has the advantage of not requiring an extra step in the compilation phase (like `moc` of Qt) since this is already syntactically correct C++ which the compiler can handle without too much hassle. This declaration also has the side effect that comparing with Qt's signal declaration we have a tangible C++ variable which possibly is a class with methods and properties we can act upon.
 
 ### Signals in **miso**    
 
@@ -55,7 +55,7 @@ The signal definition of **miso** uses the following syntax in order to declare 
 signal<float, int> float_int_sig;
 ```
 
-Achieving the simplicity of Qt's signal syntax seemed to not to be possible without using an extra step in the compilation phase (I am thinking at the convenience offered by `moc`) and personally I have found including a function signature in the declaration of my signal not to be working for me, so I went for the simplest syntax that was able to express the desired type of my signal (such as a signal, having a `float` and an `int` parameter) and with the supporting help of the variadic templates introduced in C++11 this seemed to be the ideal combination.
+Achieving the simplicity of Qt's signal syntax seemed to not to be possible without using an extra step in the compilation phase (I am thinking at the convenience offered by `moc`) and personally I have found including a function signature in the declaration of my signal not to be working for me, so I went for the simplest syntax that was able to express the desired type of my signal (such as a signal, having a `float` and an `int` parameter) and with the supporting help of the variadic templates introduced in C++11 this seemed to be the ideal combination. This syntax is also used by the library presented in [PBHogan], with the difference being the name of the class and the fact that in [PBHogan] you need to specify a different class name based on the number of parameters.
 
 So, from this above we see that a signal in the **miso** framework will be an object, constructed from a templated class which handles a various number of types. As easily deduced the signals which carry no extra information in form of parameters must be declared as:
 
@@ -610,6 +610,8 @@ namespace miso
 [BoostSigSlot] http://www.boost.org/doc/libs/1_61_0/doc/html/signals2.html
 
 [neosigslot] http://i42.co.uk/stuff/neosigslot.htm
+
+[PBHogan] https://github.com/pbhogan/Signals 
 
 [VDKSigSlot] http://vdksoft.github.io/signals/index.html
 
