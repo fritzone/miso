@@ -1,18 +1,62 @@
 #include "miso.h"
 #include <iostream>
 
+/* This is a file you definitely don't need in your project */
+
+struct d_class
+{
+    int hh = 67;
+};
+
 struct a_class {
     miso::signal<int> m_s;
+    miso::signal<d_class> m_s2;
 
     void say_hello() {
         emit m_s(42);
+        emit m_s2(d_class());
+    }
+};
+
+
+struct functor {
+    void operator()(int aa) {
+        std::cout << "functor class's int slot:" << aa << std::endl;
+    }
+
+    void operator()(d_class aa) {
+        std::cout << "functor class's d_class slot:" << aa.hh << std::endl;
+    }
+
+};
+
+int main() {
+    a_class a;
+    functor f;
+
+    miso::connect(a.m_s, f);
+    miso::connect(a.m_s2, f);
+
+    a.say_hello();
+}
+/*
+struct d_class
+{
+    int hh = 67;
+};
+
+struct a_class {
+    miso::signal<d_class> m_s;
+
+    void say_hello() {
+        emit m_s(d_class());
     }
     int x = 45;
 };
 struct functor {
     void operator()(int aa) {
         std::cout << "functor class's int slot:" << aa << std::endl;
-        auto ap = miso::sender<functor>();
+        auto ap = miso::sender<a_class>();
         std::cout << "x in emitter class:" << ap->x << std::endl;    
     }
     int x = 6;
@@ -22,7 +66,7 @@ int main() {
     functor f;
     miso::connect(a.m_s, f);
     a.say_hello();
-}
+} */
 
 /**/
 
