@@ -1,6 +1,9 @@
 #ifndef MISO_H
 #define MISO_H
 
+#include <sstream>
+#include <string>
+
 #include <functional>
 #include <memory>
 #include <type_traits>
@@ -32,14 +35,29 @@ namespace miso
 
         template<class T, class FT, class SHT>
         void connect_i(T &&f, std::vector<common_slot_base *> &sholders, bool active = true) {
-            static SHT sh;
+            static std::unordered_map<std::string, SHT> sh_hash;
+            
+            auto sh_key = typeid(T).name() + std::string(typeid(FT).name()) + static_cast<std::ostringstream&>(
+                        std::ostringstream().flush() << reinterpret_cast<void*>(&sholders)
+                      ).str();
+
+            SHT &sh = sh_hash[sh_key];
+
             func_and_bool<FT> fb{std::make_shared<FT>(std::forward<T>(f)), active, reinterpret_cast<void *>(&f)};
             bool already_in = false;
+            bool active_status = active;
+            
             std::for_each(sh.slots.begin(), sh.slots.end(),
-                          [&](func_and_bool<FT> &s) { if (s.addr == fb.addr){s.active = active; already_in = true; } });
-            if (!already_in) sh.slots.emplace_back(fb);
-            if (std::find(sholders.begin(), sholders.end(), static_cast<common_slot_base *>(&sh)) == sholders.end()) {
-                sholders.push_back(&sh);
+                          [&](func_and_bool<FT> &s) { if (s.addr == fb.addr){s.active = active; already_in = true;} active_status |= s.active; });
+            
+            if (active_status) {
+                if (!already_in) sh.slots.emplace_back(fb);
+                if (std::find(sholders.begin(), sholders.end(), static_cast<common_slot_base *>(&sh)) == sholders.end()) {
+                    sholders.push_back(&sh);
+                }
+            } else {
+                remove(sholders.begin(), sholders.end(), static_cast<common_slot_base *>(&sh));
+                sh_hash.erase(sh_key);
             }
         }
 
