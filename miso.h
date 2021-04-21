@@ -1,6 +1,7 @@
 #ifndef MISO_H
 #define MISO_H
 
+#include <unordered_map>
 #include <sstream>
 #include <string>
 
