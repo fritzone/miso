@@ -119,7 +119,7 @@ namespace miso
         };
 
         std::vector<internal::common_slot_base*> slot_holders;
-        std::tuple<Args...> call_args;
+        std::tuple<std::remove_const_t<std::remove_reference_t<Args>>...> call_args;
 
         void emit_signal(Args... args) {
             for (auto& sh : slot_holders) {
