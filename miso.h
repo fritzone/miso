@@ -102,16 +102,16 @@ namespace miso
 	class signal final
 	{
         struct slot_holder_base : public internal::common_slot_base {
-            virtual void run_slots(Args... args) = 0;
+            virtual void run_slots( const Args&... args) = 0;
         };
 
         template<class T>
         struct slot_holder : public slot_holder_base {
-            using FT = std::function<typename std::result_of<T(Args...)>::type(Args...)>;
+            using FT = std::function<typename std::result_of<T(const Args&...)>::type(const Args&...)>;
             using slot_vec_type = std::vector<internal::func_and_bool<FT>>;
             slot_vec_type slots;
 
-            void run_slots(Args... args) override {
+            void run_slots(const Args&... args) override {
                 std::for_each(slots.begin(), slots.end(), [&](internal::func_and_bool<FT>& s)
                               { if (s.active) (*(s.ft.get()))(args...); }
                 );
@@ -121,14 +121,14 @@ namespace miso
         std::vector<internal::common_slot_base*> slot_holders;
         std::tuple<Args...> call_args;
 
-        void emit_signal(Args... args) {
+        void emit_signal(const Args&... args) {
             for (auto& sh : slot_holders) {
                 (dynamic_cast<slot_holder_base*>(sh))->run_slots(args...);
             }
         }
 
         template<int ...S>
-        void delayed_call(internal::sequence<S...>)	{
+        void delayed_call(const internal::sequence<S...>&)	{
             emit_signal(std::get<S>(call_args) ...);
         }
 
@@ -154,7 +154,7 @@ namespace miso
 			connect<T>(std::forward<T>(f), false);
 		}
 
-        signal<Args...>& operator()(Args... args) {
+        signal<Args...>& operator()(const Args&... args) {
             call_args = std::tuple<Args...>(args...);
             return *this;
         }
