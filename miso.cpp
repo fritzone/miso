@@ -30,12 +30,16 @@ struct functor {
 
 };
 
+ auto retFun = []() {
+     return []() -> functor {return functor(); };
+ };
+
 int main() {
     a_class a;
     functor f;
 
     miso::connect(a.m_s, f);
-    miso::connect(a.m_s2, f);
+    miso::connect(a.m_s2, retFun()());
 
     a.say_hello();
 }
